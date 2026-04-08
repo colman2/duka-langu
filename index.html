@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#ff8906"/>
+<title>🏪 Duka Langu — Cloud</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0f0e17;color:#fffffe;font-family:'Courier New',monospace;overscroll-behavior:none;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#2a2a4a;border-radius:4px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* LOADING SCREEN */
+#loadScreen{position:fixed;inset:0;background:#0f0e17;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.big-spin{width:40px;height:40px;border:4px solid #2a2a4a;border-top-color:#ff8906;border-radius:50%;animation:spin .8s linear infinite}
+
+/* PIN */
+.pin-screen{min-height:100vh;background:#0f0e17;display:flex;align-items:center;justify-content:center;padding:20px}
+.pin-box{width:100%;max-width:320px;background:#1a1a2e;border:2px solid #ff890633;border-radius:20px;padding:28px}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:#2a2a4a;transition:background .15s}
+.pin-dot.filled{background:#ff8906}
+.pin-key{padding:16px 0;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:10px;font-size:20px;font-weight:900;cursor:pointer;font-family:'Courier New',monospace;color:#fffffe}
+.pin-key:active{background:#2a2a4a}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#ff8906,#f25f4c);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(255,137,6,.4);position:sticky;top:0;z-index:100}
+.hdr-title{font-weight:900;font-size:17px;letter-spacing:2px;color:#0f0e17}
+.hdr-sub{font-size:9px;color:#0f0e17;opacity:.7;margin-top:1px}
+
+/* TABS */
+.tabs{display:flex;background:#1a1a2e;border-bottom:2px solid #ff8906;overflow-x:auto;position:sticky;top:52px;z-index:99}
+.tabs::-webkit-scrollbar{height:0}
+.tab-btn{flex:0 0 auto;padding:11px 13px;background:transparent;border:none;color:#a7a9be;font-weight:700;font-size:11px;cursor:pointer;font-family:'Courier New',monospace;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s}
+.tab-btn.on{background:#ff8906;color:#0f0e17;border-bottom-color:#ff8906}
+
+.main{padding:14px;max-width:900px;margin:0 auto;padding-bottom:30px}
+
+/* CARDS */
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:14px;margin-bottom:12px}
+.card-title{font-size:10px;color:#ff8906;letter-spacing:2px;font-weight:700;margin-bottom:10px}
+
+/* BIDHAA GRID */
+.b-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.b-card{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:12px;cursor:pointer;position:relative;transition:border-color .15s}
+.b-card:active{transform:scale(.97)}
+.b-card.out{opacity:.6;cursor:not-allowed}
+.b-card.low{border-color:#e5317044}
+.b-card.dead{border-color:#a855f744}
+.b-badge{position:absolute;top:6px;left:7px;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:900}
+
+/* CART */
+.cart-box{background:#1a1a2e;border-radius:12px;padding:14px;border:1px solid #2a2a4a;position:sticky;top:100px}
+.qty-btn{width:40px;height:40px;border-radius:8px;background:#2a2a4a;border:none;color:#fffffe;font-size:20px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* FORMS */
+.inp{background:#0f0e17;border:1px solid #2a2a4a;border-radius:8px;color:#fffffe;padding:10px 12px;font-size:13px;font-family:'Courier New',monospace;outline:none;width:100%;margin-bottom:8px}
+.inp:focus{border-color:#ff8906}
+.inp-label{font-size:9px;color:#a7a9be;letter-spacing:1px;margin-bottom:3px;display:block}
+.btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#ff8906,#f25f4c);border:none;border-radius:10px;color:#0f0e17;font-weight:900;font-size:13px;cursor:pointer;font-family:'Courier New',monospace;letter-spacing:1px}
+.btn-secondary{width:100%;padding:10px;background:#2a2a4a;border:none;border-radius:8px;color:#a7a9be;cursor:pointer;font-family:'Courier New',monospace;font-size:12px;margin-top:7px}
+.btn-sm{padding:5px 10px;border-radius:6px;border:1px solid;font-size:11px;cursor:pointer;font-family:'Courier New',monospace;font-weight:700}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#1a1a2e;border:2px solid #ff890633;border-radius:16px;padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:24px;font-weight:700;font-size:12px;z-index:9999;animation:slideUp .3s ease;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.5);font-family:'Courier New',monospace}
+.toast-ok{background:#0a2a0a;border:1px solid #a8ff78;color:#a8ff78}
+.toast-err{background:#2a0a0a;border:1px solid #f25f4c;color:#f25f4c}
+.toast-info{background:#0a1a2a;border:1px solid #ff8906;color:#ff8906}
+
+/* RIPOTI */
+.stat-box{background:#0f0e17;padding:10px;border-radius:8px;text-align:center}
+.stat-n{font-size:18px;font-weight:900;font-family:'Courier New',monospace}
+.stat-l{font-size:9px;color:#a7a9be;margin-top:2px;letter-spacing:1px}
+
+/* PROGRESS BAR */
+.bar-bg{background:#0f0e17;border-radius:4px;height:5px;overflow:hidden;margin-top:4px}
+.bar-fill{height:5px;border-radius:4px;background:linear-gradient(90deg,#ff8906,#f25f4c);transition:width .6s}
+
+/* CLOUD INDICATOR */
+.cloud-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.cloud-live{background:#a8ff78;animation:pulse 2s infinite}
+.cloud-off{background:#f25f4c}
+.cloud-sync{background:#ff8906;animation:pulse .5s infinite}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loadScreen">
+  <div style="font-size:36px">🏪</div>
+  <div style="font-weight:900;font-size:18px;color:#ff8906;letter-spacing:2px">DUKA LANGU</div>
+  <div class="big-spin"></div>
+  <div style="font-size:11px;color:#a7a9be" id="loadMsg">Inaunganisha na Cloud...</div>
+</div>
+
+<div id="appRoot" style="display:none">
+
+<!-- PIN Screen -->
+<div id="pinScreen" class="pin-screen" style="display:none">
+  <div class="pin-box">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px">🏪</div>
+      <div style="font-weight:900;font-size:18px;color:#ff8906;letter-spacing:2px;margin-top:6px">DUKA LANGU</div>
+      <div style="font-size:11px;color:#a7a9be;margin-top:3px">Ingiza PIN yako</div>
+      <div style="font-size:10px;color:#a8ff78;margin-top:4px">
+        <span class="cloud-dot cloud-live"></span>Cloud imepakiwa ✅
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:10px;margin-bottom:18px" id="pinDots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div id="pinErr" style="color:#f25f4c;font-size:11px;text-align:center;min-height:16px;margin-bottom:8px"></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" style="background:transparent;border:none;color:#a7a9be">👑/🛒</button>
+      <button class="pin-key" onclick="pinKey('0')">0</button>
+      <button class="pin-key" onclick="pinKey('del')" style="color:#f25f4c">⌫</button>
+    </div>
+    <div style="font-size:10px;color:#a7a9be;text-align:center;margin-top:14px">
+      Boss PIN: 1234 &nbsp;|&nbsp; Muuzaji PIN: 0000
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="mainApp" style="display:none">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:24px">🏪</span>
+      <div>
+        <div class="hdr-title">DUKA LANGU</div>
+        <div class="hdr-sub" id="hdrSub">CLOUD EDITION</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+      <!-- Cloud status -->
+      <div style="font-size:10px;color:#0f0e17;background:rgba(0,0,0,.2);padding:3px 8px;border-radius:12px;display:flex;align-items:center">
+        <span class="cloud-dot" id="cloudDot" style="background:#a8ff78;animation:pulse 2s infinite"></span>
+        <span id="cloudTxt">LIVE</span>
+      </div>
+      <div id="hdrAlerts" style="display:flex;gap:5px;align-items:center"></div>
+      <div style="background:rgba(0,0,0,.2);padding:3px 9px;border-radius:16px;font-size:11px;color:#0f0e17;font-weight:700" id="hdrCart">🛒 0</div>
+      <button onclick="showBackup()" style="background:rgba(0,0,0,.2);border:none;border-radius:8px;color:#0f0e17;padding:4px 8px;cursor:pointer;font-size:13px">💾</button>
+      <button onclick="doLogout()" style="background:rgba(0,0,0,.2);border:none;border-radius:8px;color:#0f0e17;padding:4px 8px;cursor:pointer;font-size:11px;font-weight:700;font-family:'Courier New',monospace">🔒</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabsBar"></div>
+
+  <!-- Main Content -->
+  <div class="main" id="mainContent"></div>
+
+</div>
+</div>
+
+<!-- Toast -->
+<div id="toastEl" style="display:none" class="toast toast-ok"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// ── FIREBASE CONFIG ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyA7abtvXeMZ0-dNC840Oh82FpVudJeCjNM",
+  authDomain: "duka-langu-mushi.firebaseapp.com",
+  projectId: "duka-langu-mushi",
+  storageBucket: "duka-langu-mushi.firebasestorage.app",
+  messagingSenderId: "165424754630",
+  appId: "1:165424754630:web:059afda43cec1d3df84cc7",
+  measurementId: "G-N0VLM3QDHP"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── EXPOSE GLOBALLY ──────────────────────────────────────────
+window.db = db;
+window.fsLib = { collection, doc, setDoc, getDoc, getDocs, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, limit, serverTimestamp };
+
+// ── STATE ────────────────────────────────────────────────────
+window.S = {
+  role: null,
+  bidhaa: [],
+  mauzo: [],
+  cart: JSON.parse(localStorage.getItem('dl_cart') || '[]'),
+  tab: 0,
+  unsubBidhaa: null,
+  unsubMauzo: null,
+  unsubCart: null,
+};
+
+const BOSS_PIN = '1234';
+const MUUZAJI_PIN = '0000';
+
+// ── HELPERS ──────────────────────────────────────────────────
+const fmt = n => 'TZS ' + Number(n).toLocaleString();
+const fmtK = n => n >= 1000 ? (n/1000).toFixed(0)+'K' : String(n);
+const DAY = 86400000;
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toastEl');
+  el.textContent = msg;
+  el.className = `toast toast-${type}`;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = 'none', 3500);
+}
+
+function setCloud(status) {
+  const dot = document.getElementById('cloudDot');
+  const txt = document.getElementById('cloudTxt');
+  if (!dot || !txt) return;
+  if (status === 'live') { dot.style.background = '#a8ff78'; dot.style.animation = 'pulse 2s infinite'; txt.textContent = 'LIVE'; }
+  else if (status === 'sync') { dot.style.background = '#ff8906'; dot.style.animation = 'pulse .5s infinite'; txt.textContent = 'SYNC...'; }
+  else { dot.style.background = '#f25f4c'; dot.style.animation = 'none'; txt.textContent = 'OFFLINE'; }
+}
+
+function saveCart() {
+  localStorage.setItem('dl_cart', JSON.stringify(S.cart));
+  // Write cart to Firestore so Boss can see live
+  if (S.role === 'muuzaji') {
+    const { doc, setDoc, serverTimestamp } = window.fsLib;
+    setDoc(doc(db, 'settings', 'muuzaji_cart'), {
+      cart: S.cart,
+      total: S.cart.reduce((s,c) => s + c.beiKuuza*c.qty, 0),
+      updated: serverTimestamp()
+    }).catch(() => {});
+  }
+  updateCartUI();
+}
+
+function updateCartUI() {
+  const total = S.cart.reduce((s,c) => s + c.qty, 0);
+  const el = document.getElementById('hdrCart');
+  if (el) el.textContent = `🛒 ${total}`;
+}
+
+// ── PIN SYSTEM ───────────────────────────────────────────────
+let pinVal = '';
+window.pinKey = function(k) {
+  if (k === 'del') { pinVal = pinVal.slice(0,-1); updatePinDots(); return; }
+  if (pinVal.length >= 4) return;
+  pinVal += k;
+  updatePinDots();
+  if (pinVal.length === 4) checkPin();
+};
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById('pd'+i);
+    if (el) el.className = 'pin-dot' + (i < pinVal.length ? ' filled' : '');
+  }
+}
+
+function checkPin() {
+  const errEl = document.getElementById('pinErr');
+  if (pinVal === BOSS_PIN) {
+    S.role = 'boss';
+    localStorage.setItem('dl_role', 'boss');
+    startApp();
+  } else if (pinVal === MUUZAJI_PIN) {
+    S.role = 'muuzaji';
+    localStorage.setItem('dl_role', 'muuzaji');
+    startApp();
+  } else {
+    if (errEl) errEl.textContent = '❌ PIN si sahihi! Boss: 1234 | Muuzaji: 0000';
+    setTimeout(() => { pinVal = ''; updatePinDots(); if (errEl) errEl.textContent = ''; }, 1500);
+  }
+}
+
+window.doLogout = function() {
+  // Unsubscribe listeners
+  if (S.unsubBidhaa) S.unsubBidhaa();
+  if (S.unsubMauzo) S.unsubMauzo();
+  S.role = null; S.bidhaa = []; S.mauzo = [];
+  localStorage.removeItem('dl_role');
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('pinScreen').style.display = 'flex';
+  pinVal = ''; updatePinDots();
+};
+
+// ── START APP ────────────────────────────────────────────────
+function startApp() {
+  document.getElementById('pinScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  const sub = document.getElementById('hdrSub');
+  if (sub) sub.textContent = S.role === 'boss' ? '👑 BOSS • CLOUD' : '🛒 MUUZAJI • CLOUD';
+  setupTabs();
+  subscribeData();
+  updateCartUI();
+}
+
+function setupTabs() {
+  const tabs = S.role === 'boss'
+    ? ['🛒 Uza', '📦 Stoki', '📊 Ripoti', '⚙️ Bidhaa', '👑 Boss']
+    : ['🛒 Uza', '📦 Stoki', '📊 Ripoti', '⚙️ Bidhaa'];
+  const bar = document.getElementById('tabsBar');
+  bar.innerHTML = tabs.map((t,i) =>
+    `<button class="tab-btn ${i===0?'on':''}" onclick="setTab(${i})">${t}</button>`
+  ).join('');
+  S.tab = 0;
+  renderTab();
+}
+
+window.setTab = function(i) {
+  S.tab = i;
+  document.querySelectorAll('.tab-btn').forEach((b,j) => b.classList.toggle('on', j===i));
+  renderTab();
+};
+
+// ── FIREBASE LISTENERS ────────────────────────────────────────
+function subscribeData() {
+  const { collection, onSnapshot, query, orderBy } = window.fsLib;
+  setCloud('sync');
+
+  // Bidhaa listener — realtime
+  S.unsubBidhaa = onSnapshot(collection(db, 'bidhaa'), snap => {
+    S.bidhaa = snap.docs.map(d => ({...d.data(), _id: d.id}));
+    S.bidhaa.sort((a,b) => (a.jina||'').localeCompare(b.jina||''));
+    setCloud('live');
+    renderTab();
+    updateAlerts();
+  }, () => setCloud('off'));
+
+  // Mauzo listener — realtime
+  S.unsubMauzo = onSnapshot(query(collection(db, 'mauzo'), orderBy('ts', 'desc')), snap => {
+    S.mauzo = snap.docs.map(d => ({...d.data(), _id: d.id}));
+    renderTab();
+  }, () => {});
+
+  // Load bidhaa once if Firestore empty - seed default
+  setTimeout(async () => {
+    const { getDocs, collection: col } = window.fsLib;
+    const snap = await getDocs(col(db, 'bidhaa'));
+    if (snap.empty) {
+      document.getElementById('loadMsg') && (document.getElementById('loadMsg').textContent = 'Inaandaa duka...');
+      await seedDefaultBidhaa();
+    }
+  }, 2000);
+}
+
+async function seedDefaultBidhaa() {
+  const defaults = [
+    {jina:'Sukari',emoji:'🍬',kategoria:'Vyakula',unit:'Kilo',beiKununua:2000,beiKuuza:2500,stoki:50,minStoki:10,barcode:'001001',tarAdded:Date.now()},
+    {jina:'Mafuta ya Kupika',emoji:'🫙',kategoria:'Vyakula',unit:'Lita',beiKununua:3500,beiKuuza:4500,stoki:30,minStoki:8,barcode:'001002',tarAdded:Date.now()},
+    {jina:'Unga wa Ngano',emoji:'🌾',kategoria:'Vyakula',unit:'Kilo',beiKununua:1800,beiKuuza:2200,stoki:80,minStoki:15,barcode:'001003',tarAdded:Date.now()},
+    {jina:'Sabuni',emoji:'🧴',kategoria:'Vifaa',unit:'Pakiti',beiKununua:500,beiKuuza:800,stoki:20,minStoki:10,barcode:'001004',tarAdded:Date.now()},
+    {jina:'Maji',emoji:'💧',kategoria:'Vinywaji',unit:'Chupa',beiKununua:300,beiKuuza:500,stoki:120,minStoki:20,barcode:'001005',tarAdded:Date.now()},
+  ];
+  for (const b of defaults) {
+    const { doc, setDoc } = window.fsLib;
+    await setDoc(doc(db, 'bidhaa', b.barcode), {...b, ts: Date.now()});
+  }
+}
+
+// ── RENDER TAB ────────────────────────────────────────────────
+window.renderTab = function() {
+  const main = document.getElementById('mainContent');
+  if (!main) return;
+  if (S.tab === 0) renderUza();
+  else if (S.tab === 1) renderStoki();
+  else if (S.tab === 2) renderRipoti();
+  else if (S.tab === 3) renderBidhaa();
+  else if (S.tab === 4 && S.role === 'boss') renderBoss();
+};
+
+// ── TAB 0: UZA ────────────────────────────────────────────────
+function renderUza() {
+  const main = document.getElementById('mainContent');
+  const filtB = S.bidhaa;
+  const cTotal = S.cart.reduce((s,c) => s + c.beiKuuza*c.qty, 0);
+  const cProfit = S.cart.reduce((s,c) => s + (c.beiKuuza-c.beiKununua)*c.qty, 0);
+
+  let html = `
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:14px">
+    <div>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="searchInp" placeholder="🔍 Tafuta bidhaa..." onkeyup="filterBidhaa()" style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:8px;color:#fffffe;padding:9px 12px;font-size:13px;font-family:'Courier New',monospace;outline:none;flex:1"/>
+      </div>
+      <div class="b-grid" id="bidhaaGrid">`;
+
+  filtB.forEach(b => {
+    const isOut = b.stoki === 0;
+    const isLow = !isOut && b.stoki <= b.minStoki;
+    const daysSince = b.tarAdded ? Math.floor((Date.now()-b.tarAdded)/DAY) : 0;
+    const isDead = b.stoki > 0 && daysSince >= 30;
+    const inCart = S.cart.find(c => c._id === b._id);
+
+    html += `<div class="b-card ${isOut?'out':isDead?'dead':isLow?'low':''}" onclick="addToCart('${b._id}')">
+      ${inCart ? `<div style="position:absolute;top:6px;right:8px;background:#ff8906;color:#0f0e17;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:900">×${inCart.qty}</div>` : ''}
+      ${isOut ? `<span class="b-badge" style="background:#f25f4c;color:#fff">IMEISHA</span>` : isLow ? `<span class="b-badge" style="background:#e53170;color:#fff">CHINI</span>` : isDead ? `<span class="b-badge" style="background:#a855f7;color:#fff">DEAD</span>` : ''}
+      <div style="font-size:26px;margin-bottom:4px">${b.emoji||'📦'}</div>
+      <div style="font-weight:700;font-size:12px;margin-bottom:2px">${b.jina}</div>
+      <div style="color:#ff8906;font-weight:900;font-size:13px">${fmt(b.beiKuuza)}</div>
+      <div style="color:#a7a9be;font-size:10px;margin-top:2px">Stoki: ${b.stoki} ${b.unit}</div>
+    </div>`;
+  });
+
+  html += `</div></div>
+    <div>
+      <div class="cart-box">
+        <div style="font-weight:900;font-size:13px;letter-spacing:2px;color:#ff8906;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+          🧾 KAPU
+          ${S.cart.length > 0 ? `<button onclick="clearCart()" style="background:#f25f4c22;border:1px solid #f25f4c;color:#f25f4c;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;font-family:'Courier New',monospace">FUTA</button>` : ''}
+        </div>`;
+
+  if (S.cart.length === 0) {
+    html += `<div style="color:#a7a9be;text-align:center;padding:24px 0;font-size:12px"><div style="font-size:36px;margin-bottom:8px">🛒</div>Ongeza bidhaa kwenye kapu</div>`;
+  } else {
+    html += `<div style="max-height:240px;overflow-y:auto;margin-bottom:10px">`;
+    S.cart.forEach(c => {
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:#0f0e17;border-radius:8px;padding:9px 10px">
+        <span style="font-size:18px">${c.emoji||'📦'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.jina}</div>
+          <div style="color:#ff8906;font-size:10px">${fmt(c.beiKuuza)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <button class="qty-btn" onclick="changeQty('${c._id}',-1)" style="width:32px;height:32px;font-size:16px">−</button>
+          <span style="font-size:14px;font-weight:900;min-width:20px;text-align:center">${c.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${c._id}',1)" style="width:32px;height:32px;font-size:16px">+</button>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:#ff8906;min-width:60px;text-align:right">${fmt(c.beiKuuza*c.qty)}</div>
+      </div>`;
+    });
+    html += `</div>
+      <div style="border-top:1px solid #2a2a4a;padding-top:10px">
+        <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:900;margin-bottom:10px">
+          <span>JUMLA</span><span style="color:#ff8906">${fmt(cTotal)}</span>
+        </div>
+        <label class="inp-label">PESA ILIYOLIPWA (TZS)</label>
+        <input type="number" id="paidInp" placeholder="0" oninput="updateChange()" class="inp" style="font-size:16px;font-weight:900;margin-bottom:6px"/>
+        <div id="changeDiv" style="display:none;font-size:13px;font-weight:700;padding:8px 10px;border-radius:8px;margin-bottom:8px;text-align:center"></div>
+        ${S.role==='boss' ? `<div style="font-size:11px;color:#a7a9be;margin-bottom:7px;padding:6px 8px;background:#0f0e17;border-radius:6px;display:flex;justify-content:space-between"><span>Faida</span><span style="color:#a8ff78;font-weight:700">+${fmt(cProfit)}</span></div>` : ''}
+        <button class="btn-primary" onclick="checkout()">✅ KAMILISHA MAUZO</button>
+      </div>`;
+  }
+
+  html += `</div>
+      ${S.role==='muuzaji' && S.mauzo.length>0 ? `
+      <div style="margin-top:10px;padding:10px;background:#051a05;border:1px solid #a8ff7833;border-radius:10px">
+        <div style="font-size:10px;color:#a8ff78;font-weight:700;margin-bottom:6px">📱 TUMA RIPOTI KWA BOSS</div>
+        <button onclick="sendWhatsApp()" style="width:100%;padding:9px;background:linear-gradient(135deg,#25d366,#128c7e);border:none;border-radius:8px;color:#fff;font-weight:900;cursor:pointer;font-size:12px;font-family:'Courier New',monospace">📱 TUMA — WHATSAPP</button>
+      </div>` : ''}
+    </div>
+  </div>`;
+
+  main.innerHTML = html;
+}
+
+window.filterBidhaa = function() {
+  const q = document.getElementById('searchInp')?.value?.toLowerCase() || '';
+  document.querySelectorAll('#bidhaaGrid .b-card').forEach((el, i) => {
+    const b = S.bidhaa[i];
+    el.style.display = (!q || b.jina.toLowerCase().includes(q) || b.barcode?.includes(q)) ? 'block' : 'none';
+  });
+};
+
+window.addToCart = function(id) {
+  const b = S.bidhaa.find(x => x._id === id);
+  if (!b) return;
+  if (b.stoki === 0) { toast(`${b.jina} haina stoki!`, 'err'); return; }
+  const ex = S.cart.find(c => c._id === id);
+  if (ex) {
+    if (ex.qty >= b.stoki) { toast('Stoki haitoshi!', 'err'); return; }
+    S.cart = S.cart.map(c => c._id===id ? {...c, qty:c.qty+1} : c);
+  } else {
+    S.cart = [...S.cart, {...b, qty:1}];
+  }
+  saveCart(); renderUza();
+};
+
+window.changeQty = function(id, d) {
+  S.cart = S.cart.map(c => {
+    if (c._id !== id) return c;
+    const nq = c.qty + d;
+    if (nq <= 0) return null;
+    const stk = S.bidhaa.find(b => b._id===id)?.stoki || 0;
+    if (nq > stk) { toast('Stoki haitoshi!','err'); return c; }
+    return {...c, qty:nq};
+  }).filter(Boolean);
+  saveCart(); renderUza();
+};
+
+window.clearCart = function() { S.cart = []; saveCart(); renderUza(); };
+
+window.updateChange = function() {
+  const paid = parseFloat(document.getElementById('paidInp')?.value) || 0;
+  const total = S.cart.reduce((s,c) => s+c.beiKuuza*c.qty, 0);
+  const div = document.getElementById('changeDiv');
+  if (!div) return;
+  if (paid > 0) {
+    const ch = paid - total;
+    div.style.display = 'block';
+    div.style.background = ch >= 0 ? '#0a2a0a' : '#2a0a0a';
+    div.style.color = ch >= 0 ? '#a8ff78' : '#f25f4c';
+    div.textContent = ch >= 0 ? `CHENJI: ${fmt(ch)}` : `PESA HAITOSHI: ${fmt(Math.abs(ch))}`;
+  } else {
+    div.style.display = 'none';
+  }
+};
+
+window.checkout = async function() {
+  if (S.cart.length === 0) { toast('Kapu ni tupu!','err'); return; }
+  const paid = parseFloat(document.getElementById('paidInp')?.value) || 0;
+  const total = S.cart.reduce((s,c) => s+c.beiKuuza*c.qty, 0);
+  const profit = S.cart.reduce((s,c) => s+(c.beiKuuza-c.beiKununua)*c.qty, 0);
+  if (paid < total) { toast('Pesa haitoshi!','err'); return; }
+
+  setCloud('sync');
+  try {
+    const { addDoc, collection: col, doc, updateDoc, serverTimestamp } = window.fsLib;
+    // Save sale
+    await addDoc(col(db, 'mauzo'), {
+      bidhaa: S.cart.map(c => ({...c})),
+      jumla: total, faida: profit, paidAmount: paid, change: paid-total,
+      mfanyakazi: S.role, tarehe: new Date().toLocaleString('sw'), ts: Date.now()
+    });
+    // Update stoki
+    for (const c of S.cart) {
+      if (c._id) {
+        const b = S.bidhaa.find(x => x._id === c._id);
+        if (b) await updateDoc(doc(db, 'bidhaa', c._id), { stoki: Math.max(0, b.stoki - c.qty) });
+      }
+    }
+    S.cart = []; saveCart();
+    toast('✅ Mauzo yamefanikiwa!','ok');
+    setCloud('live');
+  } catch(e) {
+    toast('❌ Hitilafu ya mtandao!','err');
+    setCloud('off');
+  }
+};
+
+// ── TAB 1: STOKI ──────────────────────────────────────────────
+function renderStoki() {
+  const main = document.getElementById('mainContent');
+  const low = S.bidhaa.filter(b => b.stoki <= b.minStoki);
+  const out = S.bidhaa.filter(b => b.stoki === 0);
+  const dead = S.bidhaa.filter(b => b.stoki > 0 && Math.floor((Date.now()-(b.tarAdded||0))/DAY) >= 30);
+
+  let html = `<div style="font-weight:900;font-size:14px;letter-spacing:2px;color:#ff8906;margin-bottom:14px">📦 HALI YA STOKI</div>`;
+
+  if (dead.length > 0) {
+    html += `<div style="background:#1a0a2e;border:2px solid #a855f744;border-radius:12px;padding:13px;margin-bottom:12px">
+      <div style="font-weight:700;color:#a855f7;font-size:12px;margin-bottom:8px">💀 DEAD STOCK (${dead.length}) — zaidi ya siku 30 bila kuuzwa</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        ${dead.map(b=>`<span style="background:#2d1a4a;border:1px solid #a855f733;border-radius:7px;padding:4px 10px;font-size:11px">${b.emoji||'📦'} ${b.jina} — ${b.stoki} ${b.unit}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  if (out.length > 0) {
+    html += `<div style="background:#2a0a0a;border:1px solid #f25f4c33;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-weight:700;color:#f25f4c;font-size:11px;margin-bottom:6px">❌ IMEISHA (${out.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${out.map(b=>`<span style="background:#3a1a1a;border:1px solid #f25f4c33;border-radius:6px;padding:3px 9px;font-size:11px">${b.emoji||'📦'} ${b.jina}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">
+    <thead><tr style="color:#a7a9be;font-size:9px;letter-spacing:1px;border-bottom:2px solid #2a2a4a">
+      <th style="padding:8px;text-align:left">BIDHAA</th>
+      <th style="padding:8px;text-align:left">STOKI</th>
+      <th style="padding:8px;text-align:left">MIN</th>
+      <th style="padding:8px;text-align:left">BEI</th>
+      <th style="padding:8px;text-align:left">VITENDO</th>
+    </tr></thead><tbody>`;
+
+  S.bidhaa.forEach(b => {
+    const isOut = b.stoki === 0;
+    const isLow = !isOut && b.stoki <= b.minStoki;
+    html += `<tr style="border-bottom:1px solid #2a2a4a">
+      <td style="padding:9px 8px"><div style="display:flex;align-items:center;gap:7px"><span style="font-size:18px">${b.emoji||'📦'}</span><div><div style="font-weight:700">${b.jina}</div><div style="font-size:9px;color:#a7a9be">${b.kategoria} • ${b.unit}</div></div></div></td>
+      <td style="padding:9px 8px;font-weight:700;color:${isOut?'#f25f4c':isLow?'#ff8906':'#a8ff78'}">${b.stoki}</td>
+      <td style="padding:9px 8px;color:#a7a9be">${b.minStoki}</td>
+      <td style="padding:9px 8px;color:#ff8906;font-weight:700">${fmt(b.beiKuuza)}</td>
+      <td style="padding:9px 8px">
+        <button onclick="openRestock('${b._id}')" class="btn-sm" style="color:#ff8906;border-color:#ff890633;background:#ff890611">+JAZA</button>
+        ${S.role==='boss' ? `<button onclick="openEdit('${b._id}')" class="btn-sm" style="color:#a8ff78;border-color:#a8ff7833;background:#a8ff7811;margin-left:4px">✏️</button>` : ''}
+      </td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  main.innerHTML = html;
+}
+
+window.openRestock = function(id) {
+  const b = S.bidhaa.find(x => x._id===id);
+  if (!b) return;
+  const qty = prompt(`📦 Jaza stoki: ${b.emoji||''} ${b.jina}\nStoki ya sasa: ${b.stoki}\nIngiza kiasi cha kuongeza:`);
+  if (!qty || isNaN(qty) || Number(qty) <= 0) return;
+  const { doc, updateDoc } = window.fsLib;
+  setCloud('sync');
+  updateDoc(doc(db, 'bidhaa', id), { stoki: b.stoki + Number(qty), tarAdded: Date.now() })
+    .then(() => { toast(`✅ ${b.jina}: +${qty}`,'ok'); setCloud('live'); })
+    .catch(() => { toast('❌ Imeshindwa!','err'); setCloud('off'); });
+};
+
+// ── TAB 2: RIPOTI ─────────────────────────────────────────────
+function renderRipoti() {
+  const main = document.getElementById('mainContent');
+  const tod = S.mauzo.filter(m => new Date(m.ts||0).toDateString()===new Date().toDateString());
+  const totRev = S.mauzo.reduce((s,m) => s+m.jumla, 0);
+  const totProfit = S.mauzo.reduce((s,m) => s+m.faida, 0);
+  const todRev = tod.reduce((s,m) => s+m.jumla, 0);
+  const todProfit = tod.reduce((s,m) => s+m.faida, 0);
+
+  // Top bidhaa
+  const counts = {};
+  S.mauzo.forEach(m => m.bidhaa?.forEach(b => { counts[b.jina] = (counts[b.jina]||0)+b.qty; }));
+  const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const maxTop = top[0]?.[1] || 1;
+
+  let html = `
+  <div style="font-weight:900;font-size:14px;letter-spacing:2px;color:#ff8906;margin-bottom:14px">📊 RIPOTI</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px">
+    ${[['Mauzo Leo',tod.length,'#ff8906'],['Mapato Leo',fmt(todRev),'#ff8906'],['Faida Leo',fmt(todProfit),'#a8ff78'],['Mauzo Yote',S.mauzo.length,'#60a5fa']].map(([l,v,c])=>`
+    <div class="stat-box"><div class="stat-n" style="color:${c}">${v}</div><div class="stat-l">${l}</div></div>`).join('')}
+  </div>
+  ${S.role==='boss' ? `
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px">
+    <div class="stat-box"><div class="stat-n" style="color:#ff8906">${fmt(totRev)}</div><div class="stat-l">MAPATO YOTE</div></div>
+    <div class="stat-box"><div class="stat-n" style="color:#a8ff78">${fmt(totProfit)}</div><div class="stat-l">FAIDA YOTE</div></div>
+  </div>` : ''}
+  ${top.length > 0 ? `
+  <div class="card">
+    <div class="card-title">🏆 BIDHAA ZINAZOONGOZA</div>
+    ${top.map(([n,q]) => {
+      const b = S.bidhaa.find(x => x.jina===n);
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span>${b?.emoji||'📦'} ${n}</span><span style="color:#ff8906;font-weight:700">${q} ${b?.unit||''}</span>
+        </div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(q/maxTop*100)}%"></div></div>
+      </div>`;
+    }).join('')}
+  </div>` : ''}
+  <div class="card">
+    <div class="card-title">📋 HISTORIA YA MAUZO (${S.mauzo.length})</div>
+    ${S.mauzo.length===0 ? '<div style="color:#a7a9be;text-align:center;padding:16px;font-size:12px">Bado hakuna mauzo</div>' :
+    S.mauzo.slice(0,20).map(m => `
+    <div style="padding:9px 0;border-bottom:1px solid #2a2a4a">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:#a7a9be;margin-bottom:3px">${m.tarehe||''} ${m.mfanyakazi ? `• <span style="color:#a78bfa">${m.mfanyakazi==='muuzaji'?'🛒':'👑'} ${m.mfanyakazi}</span>` : ''}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${(m.bidhaa||[]).map(b=>`<span style="font-size:10px;background:#0f0e17;padding:2px 6px;border-radius:5px">${b.emoji||'📦'} ${b.jina} ×${b.qty}</span>`).join('')}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:10px">
+          <div style="font-weight:900;color:#ff8906;font-size:13px">${fmt(m.jumla)}</div>
+          ${S.role==='boss' ? `<div style="font-size:10px;color:#a8ff78">+${fmt(m.faida)}</div>` : ''}
+        </div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+
+  main.innerHTML = html;
+}
+
+// ── TAB 3: BIDHAA ─────────────────────────────────────────────
+function renderBidhaa() {
+  const main = document.getElementById('mainContent');
+  let html = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-weight:900;font-size:14px;letter-spacing:2px;color:#ff8906">⚙️ BIDHAA</div>
+    <div style="display:flex;gap:8px">
+      ${S.role==='boss' ? `
+      <button onclick="generateLink()" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:8px;color:#fff;padding:7px 11px;font-weight:900;cursor:pointer;font-size:11px;font-family:'Courier New',monospace">📲 LINK KWA MUUZAJI</button>
+      <button onclick="openAdd()" style="background:linear-gradient(135deg,#ff8906,#f25f4c);border:none;border-radius:8px;color:#0f0e17;padding:7px 13px;font-weight:900;cursor:pointer;font-size:12px;font-family:'Courier New',monospace">+ ONGEZA</button>` : ''}
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">`;
+
+  S.bidhaa.forEach(b => {
+    html += `<div style="background:#1a1a2e;border:2px solid #2a2a4a;border-radius:12px;padding:13px">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:9px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:24px">${b.emoji||'📦'}</span>
+          <div><div style="font-weight:700;font-size:12px">${b.jina}</div><div style="color:#a7a9be;font-size:9px">${b.kategoria} • ${b.unit}</div></div>
+        </div>
+        ${S.role==='boss' ? `<div style="display:flex;gap:3px">
+          <button onclick="openEdit('${b._id}')" class="btn-sm" style="color:#ff8906;border-color:#ff890633;background:transparent">✏️</button>
+          <button onclick="deleteBidhaa('${b._id}','${b.jina}')" class="btn-sm" style="color:#f25f4c;border-color:#f25f4c33;background:transparent">🗑️</button>
+        </div>` : ''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px">
+        ${S.role==='boss' ? `<div style="background:#0f0e17;padding:5px 7px;border-radius:5px"><div style="color:#a7a9be;font-size:8px">KUNUNUA</div><div style="font-weight:700">${fmt(b.beiKununua)}</div></div>` : ''}
+        <div style="background:#0f0e17;padding:5px 7px;border-radius:5px"><div style="color:#a7a9be;font-size:8px">KUUZA</div><div style="font-weight:700;color:#ff8906">${fmt(b.beiKuuza)}</div></div>
+        <div style="background:#0f0e17;padding:5px 7px;border-radius:5px"><div style="color:#a7a9be;font-size:8px">STOKI</div><div style="font-weight:700;color:${b.stoki===0?'#f25f4c':b.stoki<=b.minStoki?'#ff8906':'#a8ff78'}">${b.stoki} ${b.unit}</div></div>
+        ${S.role==='boss' ? `<div style="background:#0f0e17;padding:5px 7px;border-radius:5px"><div style="color:#a7a9be;font-size:8px">FAIDA</div><div style="font-weight:700;color:#a8ff78">${fmt(b.beiKuuza-b.beiKununua)}</div></div>` : ''}
+      </div>
+    </div>`;
+  });
+
+  html += `</div>`;
+  main.innerHTML = html;
+}
+
+window.openAdd = function() { openEditModal(null); };
+window.openEdit = function(id) { openEditModal(S.bidhaa.find(x => x._id===id)); };
+
+function openEditModal(b) {
+  const isNew = !b;
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.id = 'editModal';
+  modal.innerHTML = `<div class="modal">
+    <div style="font-weight:900;font-size:13px;color:#ff8906;letter-spacing:2px;margin-bottom:16px">${isNew?'+ BIDHAA MPYA':'✏️ HARIRI BIDHAA'}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${[['Jina','jina','text',b?.jina||''],['Emoji','emoji','text',b?.emoji||'📦'],['Kategoria','kategoria','text',b?.kategoria||'Vyakula'],['Unit','unit','text',b?.unit||'Pcs'],['Bei Kununua','beiKununua','number',b?.beiKununua||0],['Bei Kuuza','beiKuuza','number',b?.beiKuuza||0],['Stoki','stoki','number',b?.stoki||0],['Min Stoki','minStoki','number',b?.minStoki||5],['Barcode','barcode','text',b?.barcode||('00'+Date.now().toString().slice(-5))]].map(([l,k,t,v])=>`
+      <div><label class="inp-label">${l.toUpperCase()}</label><input type="${t}" id="ei_${k}" value="${v}" class="inp" style="margin-bottom:0"/></div>`).join('')}
+    </div>
+    <button onclick="saveEditModal('${b?._id||''}','${b?.barcode||''}')" class="btn-primary" style="margin-top:14px">💾 HIFADHI</button>
+    <button onclick="document.getElementById('editModal').remove()" class="btn-secondary">SITISHA</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+window.saveEditModal = async function(id, oldBarcode) {
+  const get = k => document.getElementById('ei_'+k)?.value;
+  const barcode = get('barcode') || ('BC'+Date.now());
+  const data = {
+    jina:get('jina'), emoji:get('emoji'), kategoria:get('kategoria'), unit:get('unit'),
+    beiKununua:Number(get('beiKununua')), beiKuuza:Number(get('beiKuuza')),
+    stoki:Number(get('stoki')), minStoki:Number(get('minStoki')),
+    barcode, tarAdded: id ? (S.bidhaa.find(x=>x._id===id)?.tarAdded||Date.now()) : Date.now()
+  };
+  const { doc, setDoc, deleteDoc: del } = window.fsLib;
+  setCloud('sync');
+  try {
+    await setDoc(doc(db, 'bidhaa', barcode), data);
+    // If barcode changed, delete old
+    if (id && oldBarcode && oldBarcode !== barcode) await del(doc(db, 'bidhaa', oldBarcode));
+    document.getElementById('editModal')?.remove();
+    toast('✅ Imehifadhiwa!','ok'); setCloud('live');
+  } catch(e) { toast('❌ Imeshindwa!','err'); setCloud('off'); }
+};
+
+window.deleteBidhaa = async function(id, jina) {
+  if (!confirm(`Futa "${jina}"?`)) return;
+  const { doc, deleteDoc: del } = window.fsLib;
+  await del(doc(db, 'bidhaa', id));
+  toast(`🗑️ ${jina} imefutwa`,'ok');
+};
+
+// ── TAB 4: BOSS VIEW ──────────────────────────────────────────
+function renderBoss() {
+  const main = document.getElementById('mainContent');
+  const tod = S.mauzo.filter(m => new Date(m.ts||0).toDateString()===new Date().toDateString());
+  const byMuuzaji = S.mauzo.filter(m => m.mfanyakazi==='muuzaji');
+  const byBoss = S.mauzo.filter(m => m.mfanyakazi==='boss');
+
+  // Live cart from Firestore
+  const { doc, onSnapshot: listen } = window.fsLib;
+  let cartHtml = '<div style="color:#a7a9be;font-size:11px;text-align:center;padding:10px">Inapakia kapu ya Muuzaji...</div>';
+
+  let html = `
+  <div style="font-weight:900;font-size:14px;letter-spacing:2px;color:#ff8906;margin-bottom:14px">👑 BOSS VIEW — LIVE</div>
+
+  <!-- Setup Link -->
+  <div style="background:linear-gradient(135deg,#0a0a2e,#1a1a2e);border:2px solid #a78bfa44;border-radius:12px;padding:14px;margin-bottom:14px">
+    <div style="font-weight:700;font-size:11px;color:#a78bfa;letter-spacing:2px;margin-bottom:8px">📲 TUMA APP KWA MUUZAJI</div>
+    <div style="font-size:11px;color:#a7a9be;line-height:1.7;margin-bottom:10px">
+      Muuzaji akifungua link hii — anapata app na bidhaa zako zote moja kwa moja.<br>
+      <span style="color:#a8ff78">Data iko Firebase — inapatikana simu yoyote!</span>
+    </div>
+    <button onclick="copyAppLink()" style="width:100%;padding:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:10px;color:#fff;font-weight:900;font-size:13px;cursor:pointer;font-family:'Courier New',monospace">
+      📋 NAKILI LINK YA APP
+    </button>
+  </div>
+
+  <!-- Live Kapu -->
+  <div id="liveCartBox" style="background:#1a1a2e;border:2px solid #ff890433;border-radius:12px;padding:14px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-weight:700;font-size:11px;color:#ff8906;letter-spacing:2px">🛒 KAPU YA MUUZAJI — LIVE</div>
+      <div style="font-size:10px;color:#a8ff78;display:flex;align-items:center"><span class="cloud-dot" style="width:7px;height:7px;border-radius:50%;background:#a8ff78;animation:pulse 2s infinite;display:inline-block;margin-right:5px"></span>LIVE</div>
+    </div>
+    ${cartHtml}
+  </div>
+
+  <!-- Stats leo -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px">
+    ${[['Mauzo Leo',tod.length,'#ff8906'],['Mapato Leo',fmt(tod.reduce((s,m)=>s+m.jumla,0)),'#ff8906'],['Faida Leo',fmt(tod.reduce((s,m)=>s+m.faida,0)),'#a8ff78']].map(([l,v,c])=>`
+    <div class="stat-box"><div class="stat-n" style="color:${c};font-size:14px">${v}</div><div class="stat-l">${l}</div></div>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
+    <div class="stat-box"><div class="stat-n" style="color:#a78bfa">${byMuuzaji.length}</div><div class="stat-l">🛒 MUUZAJI ALIPOUZA</div></div>
+    <div class="stat-box"><div class="stat-n" style="color:#ff8906">${byBoss.length}</div><div class="stat-l">👑 BOSS ALIPOUZA</div></div>
+  </div>
+
+  <!-- Top bidhaa -->
+  <div class="card">
+    <div class="card-title">🏆 BIDHAA ZINAZOONGOZA</div>
+    ${(()=>{
+      const c={};S.mauzo.forEach(m=>m.bidhaa?.forEach(b=>{c[b.jina]=(c[b.jina]||0)+b.qty;}));
+      const t=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      if(!t.length) return '<div style="color:#a7a9be;font-size:11px">Bado hakuna mauzo</div>';
+      const mx=t[0][1]||1;
+      return t.map(([n,q])=>{
+        const b=S.bidhaa.find(x=>x.jina===n);
+        return `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span>${b?.emoji||'📦'} ${n}</span><span style="color:#ff8906;font-weight:700">${q} ${b?.unit||''}</span></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.round(q/mx*100)}%"></div></div></div>`;
+      }).join('');
+    })()}
+  </div>
+
+  <!-- Mauzo yote -->
+  <div style="font-weight:700;font-size:11px;letter-spacing:2px;color:#a7a9be;margin-bottom:8px">MAUZO YOTE (${S.mauzo.length})</div>
+  ${S.mauzo.slice(0,10).map(m=>`
+  <div class="card" style="padding:11px 14px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:10px;color:#a7a9be;margin-bottom:3px">${m.tarehe||''} ${m.mfanyakazi?`• <span style="color:#a78bfa">${m.mfanyakazi==='muuzaji'?'🛒':'👑'} ${m.mfanyakazi}</span>`:''}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${(m.bidhaa||[]).map(b=>`<span style="font-size:10px;background:#0f0e17;padding:2px 6px;border-radius:5px">${b.emoji||'📦'} ${b.jina} ×${b.qty}</span>`).join('')}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:10px">
+        <div style="font-weight:900;color:#ff8906;font-size:13px">${fmt(m.jumla)}</div>
+        <div style="font-size:10px;color:#a8ff78">+${fmt(m.faida)}</div>
+      </div>
+    </div>
+  </div>`).join('')}
+  ${S.mauzo.length===0?'<div style="color:#a7a9be;text-align:center;padding:24px;font-size:12px">Bado hakuna mauzo</div>':''}`;
+
+  main.innerHTML = html;
+
+  // Subscribe to live cart
+  try {
+    const cartDocRef = doc(db, 'settings', 'muuzaji_cart');
+    listen(cartDocRef, snap => {
+      const box = document.getElementById('liveCartBox');
+      if (!box) return;
+      const data = snap.data();
+      if (!data || !data.cart || data.cart.length === 0) {
+        box.querySelector('[id]') && (box.innerHTML = box.innerHTML.replace(/Inapakia.*<\/div>/, '<div style="color:#a7a9be;font-size:11px;text-align:center;padding:10px">Kapu ni tupu — Muuzaji hajaanza</div>'));
+        return;
+      }
+      let cartContent = data.cart.map(c =>
+        `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #2a2a4a"><span>${c.emoji||'📦'} ${c.jina} ×${c.qty}</span><span style="color:#ff8906">${fmt(c.beiKuuza*c.qty)}</span></div>`
+      ).join('');
+      cartContent += `<div style="font-weight:900;color:#ff8906;font-size:14px;margin-top:8px;text-align:right">JUMLA: ${fmt(data.total||0)}</div>`;
+      const inner = box.querySelector('div:last-child') || box;
+      inner.innerHTML = cartContent;
+    });
+  } catch(e) {}
+}
+
+window.copyAppLink = function() {
+  const link = window.location.href.split('#')[0];
+  navigator.clipboard.writeText(link).then(() => {
+    toast('✅ Link imenakiliwa! Tuma WhatsApp kwa Muuzaji','ok');
+  }).catch(() => {
+    prompt('Nakili link hii:', link);
+  });
+};
+
+window.generateLink = window.copyAppLink;
+
+// ── WHATSAPP REPORT ───────────────────────────────────────────
+window.sendWhatsApp = function() {
+  const tod = S.mauzo.filter(m => new Date(m.ts||0).toDateString()===new Date().toDateString());
+  const counts = {};
+  tod.forEach(m => m.bidhaa?.forEach(b => { counts[b.jina]=(counts[b.jina]||0)+b.qty; }));
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([n,q])=>`  • ${n}: ${q}`).join('\n');
+  const msg = `🏪 *RIPOTI YA DUKA — ${new Date().toLocaleDateString('sw')}*\n\n📊 *LEO:*\n• Mauzo: ${tod.length}\n• Mapato: ${fmt(tod.reduce((s,m)=>s+m.jumla,0))}\n• Faida: ${fmt(tod.reduce((s,m)=>s+m.faida,0))}\n\n🏆 *BIDHAA ZINAZOONGOZA:*\n${top||'  Bado hakuna'}\n\n⚠️ *IMEISHA:* ${S.bidhaa.filter(b=>b.stoki===0).map(b=>b.jina).join(', ')||'Hakuna'}\n\n_Kutoka Duka Langu Cloud_`;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg), '_blank');
+};
+
+// ── ALERTS ───────────────────────────────────────────────────
+function updateAlerts() {
+  const el = document.getElementById('hdrAlerts'); if (!el) return;
+  const out = S.bidhaa.filter(b=>b.stoki===0).length;
+  const low = S.bidhaa.filter(b=>b.stoki>0&&b.stoki<=b.minStoki).length;
+  const dead = S.bidhaa.filter(b=>b.stoki>0&&Math.floor((Date.now()-(b.tarAdded||0))/DAY)>=30).length;
+  let html = '';
+  if (out) html += `<div style="background:#f25f4c;padding:3px 7px;border-radius:12px;font-size:10px;font-weight:700;color:#fff;animation:pulse 1.5s infinite">⚠️${out}</div>`;
+  if (low) html += `<div style="background:#e53170;padding:3px 7px;border-radius:12px;font-size:10px;font-weight:700;color:#fff">📉${low}</div>`;
+  if (dead) html += `<div style="background:#a855f7;padding:3px 7px;border-radius:12px;font-size:10px;font-weight:700;color:#fff">💀${dead}</div>`;
+  el.innerHTML = html;
+}
+
+// ── BACKUP ────────────────────────────────────────────────────
+window.showBackup = function() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-bg';
+  modal.innerHTML = `<div class="modal">
+    <div style="font-weight:900;font-size:13px;color:#ff8906;letter-spacing:2px;margin-bottom:14px">💾 HIFADHI DATA</div>
+    <div style="background:#0f0e17;border-radius:10px;padding:13px;margin-bottom:14px;font-size:12px;color:#a7a9be;line-height:1.8">
+      📦 Bidhaa: <strong style="color:#ff8906">${S.bidhaa.length}</strong><br>
+      🧾 Mauzo: <strong style="color:#a8ff78">${S.mauzo.length}</strong><br>
+      ☁️ Data iko Firebase — inapatikana simu YOYOTE!
+    </div>
+    <div style="background:#051a05;border:1px solid #a8ff7833;border-radius:10px;padding:13px;margin-bottom:14px;font-size:12px;color:#a8ff78;line-height:1.7">
+      ✅ <strong>Tofauti na awali:</strong><br>
+      Sasa data yako iko Google Firebase — hata ukibadilisha simu au link, data ipo.<br>
+      Fungua tu app mpya → ingiza PIN → data yako yote ipo!
+    </div>
+    <button onclick="downloadBackup()" class="btn-primary">📥 DOWNLOAD BACKUP (Ziada)</button>
+    <button onclick="this.closest('.modal-bg').remove()" class="btn-secondary">FUNGA</button>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+};
+
+window.downloadBackup = function() {
+  const data = { version:'duka_firebase_v1', tarehe:new Date().toLocaleString('sw'), bidhaa:S.bidhaa, mauzo:S.mauzo };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'duka_backup_'+new Date().toLocaleDateString().replace(/\//g,'-')+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  toast('✅ Backup imeshuka!','ok');
+};
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  document.getElementById('loadMsg').textContent = 'Inaunganisha Firebase...';
+  try {
+    // Test connection
+    const { doc, getDoc } = window.fsLib;
+    await getDoc(doc(db, 'settings', 'test'));
+    document.getElementById('loadMsg').textContent = '✅ Cloud imeunganika!';
+    await new Promise(r => setTimeout(r, 800));
+    document.getElementById('loadScreen').style.display = 'none';
+    document.getElementById('appRoot').style.display = 'block';
+
+    // Auto-login if PIN was saved
+    const savedRole = localStorage.getItem('dl_role');
+    if (savedRole === 'boss' || savedRole === 'muuzaji') {
+      S.role = savedRole;
+      document.getElementById('pinScreen').style.display = 'none';
+      startApp();
+    } else {
+      document.getElementById('pinScreen').style.display = 'flex';
+    }
+  } catch(e) {
+    document.getElementById('loadMsg').textContent = '⚠️ Angalia mtandao wako!';
+    setTimeout(init, 3000);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
